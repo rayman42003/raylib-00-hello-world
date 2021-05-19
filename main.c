@@ -2,6 +2,11 @@
 #include "raymath.h"
 #include <stdio.h>
 
+typedef struct IntVector2 {
+    int x;
+    int y;
+} IntVector2;
+
 typedef struct Grid {
     int row;
     int col;
@@ -30,12 +35,28 @@ void drawGrid(Grid grid) {
     }
 }
 
+IntVector2 getGridCell(Grid grid, Vector2 pos) {
+    Vector2 originPos = Vector2Subtract(pos, grid.startingPos);
+    float originPosX = originPos.x;
+    float originPosY = originPos.y;
+    float maxX = grid.cellDimensions.x * grid.col;
+    float maxY = grid.cellDimensions.y * grid.row;
+    if (originPosX < 0 || originPosX > maxX || originPosY < 0 || originPosY > maxY) {
+        return (IntVector2) { .x = -1, .y = -1 };
+    }
+    int cellX = (int) (originPosX / grid.cellDimensions.x);
+    int cellY = (int) (originPosY / grid.cellDimensions.y);
+    return (IntVector2) { .x = cellX, .y = cellY };
+}
+
 int main() 
 {
     // Initialization
     //--------------------------------------------------------------------------------------
     const int screenWidth = 800;
     const int screenHeight = 600;
+
+    IntVector2 mousePos = (IntVector2) { .x = 0, .y = 0};
 
     InitWindow(screenWidth, screenHeight, "raylib");
 
@@ -51,6 +72,12 @@ int main()
         BeginDrawing();
         ClearBackground(RAYWHITE);
         drawGrid(grid);
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            mousePos = getGridCell(grid, GetMousePosition());
+        }
+        char* mousePosMsg[80];
+        sprintf(mousePosMsg, "Mouse pos: [%d, %d]", mousePos.x, mousePos.y);
+        DrawText(mousePosMsg, 10, 30, 20, ORANGE);
         DrawFPS(10, 10);
         EndDrawing();
     }

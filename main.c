@@ -16,8 +16,13 @@ typedef struct Grid {
     char** values;
 } Grid;
 
+bool isValidGridCell(Grid grid, IntVector2 cell) {
+    return cell.x >= 0 && cell.x < grid.col &&
+                cell.y >= 0 && cell.y < grid.row;
+}
+
 Vector2 getGridCellCenter(Grid grid, IntVector2 cell) {
-    if (cell.x < 0 || cell.x >= grid.col || cell.y < 0 || cell.y >= grid.row) {
+    if (!isValidGridCell(grid, cell)) {
         return (Vector2) { .x = -1, .y = -1 };
     }
     return (Vector2) { .x = (cell.x + 0.5f) * grid.cellDimensions.x + grid.startingPos.x, 
@@ -104,7 +109,9 @@ int main()
         ClearBackground(RAYWHITE);
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             clickedCell = getGridCell(grid, GetMousePosition());
-            grid.values[clickedCell.x][clickedCell.y] = 'x';
+            if (isValidGridCell(grid, clickedCell)) {
+                grid.values[clickedCell.x][clickedCell.y] = 'x';
+            }
         }
         char* clickedCellMsg[80];
         sprintf(clickedCellMsg, "Cell clicked: [%d, %d]", clickedCell.x, clickedCell.y);

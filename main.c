@@ -102,6 +102,8 @@ int main()
     }
     grid.values = gridValues;
 
+    bool player1Turn = true;
+
     IntVector2 clickedCell = (IntVector2) { .x = -1, .y = -1};
     while (!WindowShouldClose())
     {
@@ -110,7 +112,14 @@ int main()
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             clickedCell = getGridCell(grid, GetMousePosition());
             if (isValidGridCell(grid, clickedCell)) {
-                grid.values[clickedCell.x][clickedCell.y] = 'x';
+                if (grid.values[clickedCell.x][clickedCell.y] == ' ') {
+                    if (player1Turn) {
+                        grid.values[clickedCell.x][clickedCell.y] = 'x';
+                    } else {
+                        grid.values[clickedCell.x][clickedCell.y] = 'o';
+                    }
+                    player1Turn = !player1Turn;
+                }
             }
         }
         char* clickedCellMsg[80];

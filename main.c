@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "raymath.h"
 #include "stdio.h"
 
 int main() 
@@ -7,6 +8,8 @@ int main()
     //--------------------------------------------------------------------------------------
     const int screenWidth = 800;
     const int screenHeight = 600;
+
+    const float EPSILON = 0.0001;
 
 
     InitWindow(screenWidth, screenHeight, "raylib");
@@ -21,6 +24,7 @@ int main()
 
     int eyeSize = 120;
     int pupilSize = 40;
+    int borderSize = 30;
 
     while (!WindowShouldClose())
     {
@@ -32,11 +36,38 @@ int main()
         sprintf(mousePosText, "Mouse pos: [%.2f, %.2f]", mousePos.x, mousePos.y);
         DrawText(mousePosText, 10, 30, 20, ORANGE);
 
-        DrawCircle(leftEye.x, leftEye.y, eyeSize, LIGHTGRAY);
-        DrawCircle(leftPupil.x, leftPupil.y, pupilSize, BLACK);
+        float distToLeftEye = fabs(Vector2Distance(mousePos, leftEye));
+        float distToRightEye = fabs(Vector2Distance(mousePos, rightEye));
 
+        Vector2 closerEye;
+        Vector2 furtherEye;
+        float distToCloserEye;
+        if (distToLeftEye < distToRightEye) {
+            closerEye = leftEye;
+            furtherEye = rightEye;
+            distToCloserEye = distToLeftEye;
+        } else {
+            closerEye = rightEye;
+            furtherEye = leftEye;
+            distToCloserEye = distToRightEye;
+        }
+        
+        Vector2 eyeToMouse = Vector2Subtract(mousePos, closerEye);
+        if (fabs(eyeToMouse.x) < EPSILON && fabs(eyeToMouse.y) < EPSILON) {
+            eyeToMouse = Vector2Zero();
+        } else {
+            eyeToMouse = Vector2Normalize(eyeToMouse);
+        }
+        
+        float eyeOffset = fmin(distToCloserEye, eyeSize - pupilSize - borderSize);
+        closerEye = Vector2Add(closerEye, Vector2Scale(eyeToMouse, eyeOffset));
+        furtherEye = Vector2Add(furtherEye, Vector2Scale(eyeToMouse, eyeOffset));
+
+        DrawCircle(leftEye.x, leftEye.y, eyeSize, LIGHTGRAY);
         DrawCircle(rightEye.x, rightEye.y, eyeSize, LIGHTGRAY);
-        DrawCircle(rightPupil.x, rightPupil.y, pupilSize, BLACK);
+
+        DrawCircle(closerEye.x, closerEye.y, pupilSize, BLACK);
+        DrawCircle(furtherEye.x, furtherEye.y, pupilSize, BLACK);
         
         DrawFPS(10, 10);
         EndDrawing();

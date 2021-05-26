@@ -2,6 +2,15 @@
 #include "raymath.h"
 #include "stdio.h"
 
+Vector2 safeVector2Normalize(Vector2 v) {
+    const float EPSILON = 0.0001;
+    if (fabs(v.x) < EPSILON && fabs(v.y) < EPSILON) {
+        return Vector2Zero();
+    } else {
+        return Vector2Normalize(v);
+    }
+}
+
 int main() 
 {
     // Initialization
@@ -9,23 +18,21 @@ int main()
     const int screenWidth = 800;
     const int screenHeight = 600;
 
-    const float EPSILON = 0.0001;
-
-
     InitWindow(screenWidth, screenHeight, "raylib");
 
     SetTargetFPS(60); 
 
     Vector2 leftEye = (Vector2) { .x = 250, .y = 300 };
-    Vector2 leftPupil = leftEye;
 
     Vector2 rightEye = (Vector2) { .x = 550, .y = 300 };
-    Vector2 rightPupil = rightEye;
 
     int eyeSize = 120;
     int pupilSize = 40;
     int borderSize = 30;
 
+    float pupilSpeed = 1000.0f;
+    Vector2 prevLeftPupil = leftEye;
+    Vector2 prevRightPupil = rightEye;
     while (!WindowShouldClose())
     {
         BeginDrawing();
@@ -39,35 +46,33 @@ int main()
         float distToLeftEye = fabs(Vector2Distance(mousePos, leftEye));
         float distToRightEye = fabs(Vector2Distance(mousePos, rightEye));
 
-        Vector2 closerEye;
-        Vector2 furtherEye;
+        bool isCloserToLeftEye;
         float distToCloserEye;
         if (distToLeftEye < distToRightEye) {
-            closerEye = leftEye;
-            furtherEye = rightEye;
+            isCloserToLeftEye = true;
             distToCloserEye = distToLeftEye;
         } else {
-            closerEye = rightEye;
-            furtherEye = leftEye;
+            isCloserToLeftEye = false;
             distToCloserEye = distToRightEye;
         }
         
-        Vector2 eyeToMouse = Vector2Subtract(mousePos, closerEye);
-        if (fabs(eyeToMouse.x) < EPSILON && fabs(eyeToMouse.y) < EPSILON) {
-            eyeToMouse = Vector2Zero();
-        } else {
-            eyeToMouse = Vector2Normalize(eyeToMouse);
-        }
+        Vector2 eyeToMouse = Vector2Subtract(mousePos, isCloserToLeftEye ? leftEye : rightEye);
+        eyeToMouse = safeVector2Normalize(eyeToMouse);
         
         float eyeOffset = fmin(distToCloserEye, eyeSize - pupilSize - borderSize);
-        closerEye = Vector2Add(closerEye, Vector2Scale(eyeToMouse, eyeOffset));
-        furtherEye = Vector2Add(furtherEye, Vector2Scale(eyeToMouse, eyeOffset));
+        Vector2 desiredLeftPupil = Vector2Add(leftEye, Vector2Scale(eyeToMouse, eyeOffset));
 
-        DrawCircle(leftEye.x, leftEye.y, eyeSize, LIGHTGRAY);
-        DrawCircle(rightEye.x, rightEye.y, eyeSize, LIGHTGRAY);
+        Vector2 pupilMoveDir = safeVector2Normalize(Vector2Subtract(desiredLeftPupil, prevLeftPupil));
 
-        DrawCircle(closerEye.x, closerEye.y, pupilSize, BLACK);
-        DrawCircle(furtherEye.x, furtherEye.y, pupilSize, BLACK);
+        float maxMoveDistance = Vector2Distance(desiredLeftPupil, prevLeftPupil);
+        prevLeftPupil = Vector2Add(prevLeftPupil, Vector2Scale(pupilMoveDir, fmin(pupilSpeed * GetFrameTime(), maxMoveDistance)));
+        prevRightPupil = Vector2Add(prevRightPupil, Vector2Scale(pupilMoveDir, fmin(pupilSpeed * GetFrameTime(), maxMoveDistance)));
+
+        DrawCircleV(leftEye, eyeSize, LIGHTGRAY);
+        DrawCircleV(rightEye, eyeSize, LIGHTGRAY);
+
+        DrawCircleV(prevLeftPupil, pupilSize, BLACK);
+        DrawCircleV(prevRightPupil, pupilSize, BLACK);
         
         DrawFPS(10, 10);
         EndDrawing();
